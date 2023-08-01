@@ -33,8 +33,8 @@ types:
   dataImportEventTypes: !include raml-storage/schemas/common/dataImportEventTypes.json
   dataImportInitConfig: !include raml-storage/schemas/common/dataImportInitConfig.json
   fileUploadInfo: !include fileUploadInfo.json
-
-
+  splitStatus: !include raml-storage/schemas/dto/splitStatus.json
+  assembleFileDto: !include raml-storage/schemas/dto/assembleFileDto.json
 traits:
   validate: !include raml-storage/raml-util/traits/validation.raml
   language: !include raml-storage/raml-util/traits/language.raml
@@ -326,6 +326,45 @@ resourceTypes:
           body:
             application/json:
               type: fileUploadInfo
+        400:
+          description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        500:
+          description: "Internal server error"
+          body:
+            text/plain:
+              example: "Internal server error"
+  /assembleStorageFile:
+    post:
+      description: Assemble the large file uploaded to storage by the UI
+      is: [validate]
+      body:
+        application/json:
+          type: assembleFileDto
+      responses:
+        204:
+        400:
+          description: "Bad request"
+          body:
+            text/plain:
+              example: "Bad request"
+        500:
+          description: "Internal server error"
+          body:
+            text/plain:
+              example: "Internal server error"
+  /splitStatus:
+    get:
+      description: Get the server configuration of file splitting 
+      queryParameters:
+      responses:
+        200:
+          body:
+            application/json:
+              type: splitStatus
+    
         400:
           description: "Bad request"
           body:

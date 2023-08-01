@@ -16,6 +16,15 @@
       "id": "data-import",
       "version": "3.0",
       "handlers": [
+      	{
+          "methods": [
+            "GET"
+          ],
+          "pathPattern": "/data-import/splitStatus",
+          "permissionsRequired": [
+            "data-import.splitconfig.get"
+          ]
+        },
         {
           "methods": [
             "POST"
@@ -36,6 +45,15 @@
           "pathPattern": "/data-import/uploadDefinitions",
           "permissionsRequired": [
             "data-import.uploaddefinitions.get"
+          ]
+        },
+               {
+          "methods": [
+            "POST"
+          ],
+          "pathPattern": "/data-import/assembleStorageFile",
+          "permissionsRequired": [
+            "data-import.assembleStorageFile.post"
           ]
         },
         {
@@ -301,6 +319,16 @@
     }
   ],
   "permissionSets": [
+  	{
+      "permissionName": "data-import.assembleStorageFile.post",
+      "displayName": "Permission to assemble a file out of uploaded fragments",
+      "description": "Permission to assemble a file out of uploaded fragments"
+    },
+    {
+      "permissionName": "data-import.splitconfig.get",
+      "displayName": "Get the status of file splitting configuration",
+      "description": "Get the status of file splitting configuration"
+    },
     {
       "permissionName": "data-import.uploaddefinitions.post",
       "displayName": "Data Import - create new upload definition",
