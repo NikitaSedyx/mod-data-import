@@ -1,6 +1,7 @@
 package org.folio.rest.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -11,16 +12,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.folio.dao.UploadDefinitionDao;
 import org.folio.dataimport.util.ExceptionHelper;
 import org.folio.dataimport.util.OkapiConnectionParams;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.annotations.Stream;
+import org.folio.rest.client.ChangeManagerClient;
 import org.folio.rest.jaxrs.model.AssembleFileDto;
 import org.folio.rest.jaxrs.model.Error;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.FileDefinition;
 import org.folio.rest.jaxrs.model.FileExtension;
+import org.folio.rest.jaxrs.model.InitJobExecutionsRqDto;
+import org.folio.rest.jaxrs.model.InitJobExecutionsRqDto.SourceType;
 import org.folio.rest.jaxrs.model.ProcessFilesRqDto;
+import org.folio.rest.jaxrs.model.ProcessSplitFilesRqDto;
 import org.folio.rest.jaxrs.model.SplitStatus;
 import org.folio.rest.jaxrs.model.UploadDefinition;
 import org.folio.rest.jaxrs.resource.DataImport;
@@ -36,11 +42,16 @@ import org.springframework.beans.factory.annotation.Value;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+
+import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.folio.rest.RestVerticle.OKAPI_USERID_HEADER;
 import static org.folio.rest.RestVerticle.STREAM_ABORT;
@@ -512,6 +523,67 @@ public class DataImportImpl implements DataImport {
     });
     
   }
+  @Override
+  public void postDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionId(String uploadDefinitionId,
+      ProcessSplitFilesRqDto entity, Map<String, String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler,
+      Context vertxContext) {
+    //look up upload definition
+    vertxContext.runOnContext(c -> {
+      try {
+        
+        
+        uploadDefinitionService.getUploadDefinitionById(uploadDefinitionId, tenantId).compose((uploadDefinition) -> { 
+          Promise<List<FileDefinition>> fileDefPromise = Promise.promise();
+          if(uploadDefinition.isPresent()) {
+            fileDefPromise.complete(uploadDefinition.get().getFileDefinitions());
+         
+          } else {
+            fileDefPromise.fail("UploadDefinition does not exist");
+        }
+        return fileDefPromise.future();
+        }).compose(fileDefs -> {
+          //create job execution
+          OkapiConnectionParams params = new OkapiConnectionParams(okapiHeaders, vertxContext.owner());
+          ChangeManagerClient client = new ChangeManagerClient(params.getOkapiUrl(), params.getTenantId(), params.getToken());
+          Promise<FileDefinition> jobExecutionPromise = Promise.promise();
+          InitJobExecutionsRqDto dto = new InitJobExecutionsRqDto();
+          List<org.folio.rest.jaxrs.model.File> files = new ArrayList<org.folio.rest.jaxrs.model.File>();
+          for(FileDefinition d : fileDefs) {
+            org.folio.rest.jaxrs.model.File f = new org.folio.rest.jaxrs.model.File();
+            f.setName(d.getSourcePath());
+            files.add(f);
+          }
+          dto.setFiles(files);
+          dto.setUserId(params.getHeaders().get("x-okapi-userId"));
+          dto.setSourceType(SourceType.FILES);
+         
+          return client.postChangeManagerJobExecutions(dto);
+        }).compose(FileDefinition -> {
+          //start writer / service call
+          Promise<CompositeFuture> splitFilePromise = Promise.promise();
+          //return fileSplitService.splitFileFromS3(vertxContext,FileDefinition);
+          return splitFilePromise.future();
+        }).map(Response.class::cast)
+        .map(PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse::respond204)
+        .onComplete(asyncResultHandler);
+        
+   
+      
+          
+      } catch(Exception e) {
+        
+      }});
+          
+      
+    }
+   
+    
+    
+    //hand off to split service
+      //get file from s3
+      
+    
+  }
   /**
    * Validate {@link FileExtension} before save or update
    *
@@ -559,6 +631,8 @@ public class DataImportImpl implements DataImport {
     byte[] decodedBytes = Base64.getDecoder().decode(strEncoded);
     return new String(decodedBytes, StandardCharsets.UTF_8);
   }
+
+
 
 
 
