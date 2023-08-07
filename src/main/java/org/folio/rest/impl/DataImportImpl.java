@@ -530,59 +530,45 @@ public class DataImportImpl implements DataImport {
     //look up upload definition
     vertxContext.runOnContext(c -> {
       try {
-        
-        
-        uploadDefinitionService.getUploadDefinitionById(uploadDefinitionId, tenantId).compose((uploadDefinition) -> { 
-          Promise<List<FileDefinition>> fileDefPromise = Promise.promise();
-          if(uploadDefinition.isPresent()) {
-            fileDefPromise.complete(uploadDefinition.get().getFileDefinitions());
-         
-          } else {
-            fileDefPromise.fail("UploadDefinition does not exist");
-        }
-        return fileDefPromise.future();
-        }).compose(fileDefs -> {
-          //create job execution
-          OkapiConnectionParams params = new OkapiConnectionParams(okapiHeaders, vertxContext.owner());
-          ChangeManagerClient client = new ChangeManagerClient(params.getOkapiUrl(), params.getTenantId(), params.getToken());
-          Promise<FileDefinition> jobExecutionPromise = Promise.promise();
-          InitJobExecutionsRqDto dto = new InitJobExecutionsRqDto();
-          List<org.folio.rest.jaxrs.model.File> files = new ArrayList<org.folio.rest.jaxrs.model.File>();
-          for(FileDefinition d : fileDefs) {
-            org.folio.rest.jaxrs.model.File f = new org.folio.rest.jaxrs.model.File();
-            f.setName(d.getSourcePath());
-            files.add(f);
-          }
-          dto.setFiles(files);
-          dto.setUserId(params.getHeaders().get("x-okapi-userId"));
-          dto.setSourceType(SourceType.FILES);
-         
-          return client.postChangeManagerJobExecutions(dto);
-        }).compose(FileDefinition -> {
-          //start writer / service call
-          
-          //return fileSplitService.splitFileFromS3(vertxContext,FileDefinition);
-          
-        })
-        .map(PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse::respond204)
-        .map(Response.class::cast)
-        .onComplete(asyncResultHandler);
-        
-   
-      
-          
-      } catch(Exception e) {
-        
-      }});
-          
-      
-    }
-   
-    
-    
-    //hand off to split service
-      //get file from s3
-      
+
+        uploadDefinitionService.getUploadDefinitionById(uploadDefinitionId, tenantId)
+          .compose((uploadDefinition) -> {
+            Promise<List<FileDefinition>> fileDefPromise = Promise.promise();
+            if (uploadDefinition.isPresent()) {
+              fileDefPromise.complete(uploadDefinition.get()
+                .getFileDefinitions());
+
+            } else {
+              fileDefPromise.fail("UploadDefinition does not exist");
+            }
+            return fileDefPromise.future();
+          })
+          .compose(fileDefs -> {
+            // create job execution
+            OkapiConnectionParams params = new OkapiConnectionParams(okapiHeaders, vertxContext.owner());
+            ChangeManagerClient client = new ChangeManagerClient(params.getOkapiUrl(), params.getTenantId(), params.getToken());
+            InitJobExecutionsRqDto dto = new InitJobExecutionsRqDto();
+            List<org.folio.rest.jaxrs.model.File> files = new ArrayList<org.folio.rest.jaxrs.model.File>();
+            for (FileDefinition d : fileDefs) {
+              org.folio.rest.jaxrs.model.File f = new org.folio.rest.jaxrs.model.File();
+              f.setName(d.getSourcePath());
+              files.add(f);
+            }
+            dto.setFiles(files);
+            dto.setUserId(params.getHeaders()
+              .get("x-okapi-userId"));
+            dto.setSourceType(SourceType.FILES);
+
+            return client.postChangeManagerJobExecutions(dto);
+          })
+          .map(throwaway -> PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse.respond204())
+          .map(Response.class::cast)
+          .onComplete(asyncResultHandler);
+
+      } catch (Exception e) {
+
+      }
+    });
     
   }
   /**
