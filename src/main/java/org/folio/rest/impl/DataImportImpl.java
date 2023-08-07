@@ -560,11 +560,12 @@ public class DataImportImpl implements DataImport {
           return client.postChangeManagerJobExecutions(dto);
         }).compose(FileDefinition -> {
           //start writer / service call
-          Promise<CompositeFuture> splitFilePromise = Promise.promise();
+          
           //return fileSplitService.splitFileFromS3(vertxContext,FileDefinition);
-          return splitFilePromise.future();
-        }).map(Response.class::cast)
+          
+        })
         .map(PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse::respond204)
+        .map(Response.class::cast)
         .onComplete(asyncResultHandler);
         
    
