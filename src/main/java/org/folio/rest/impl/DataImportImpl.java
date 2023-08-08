@@ -563,10 +563,12 @@ public class DataImportImpl implements DataImport {
           })
           .map(throwaway -> PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse.respond204())
           .map(Response.class::cast)
+          .otherwise(ExceptionHelper::mapExceptionToResponse)
           .onComplete(asyncResultHandler);
 
       } catch (Exception e) {
-
+        LOGGER.warn("postDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionId:: Failed to start split file process", e);
+        asyncResultHandler.handle(Future.succeededFuture(ExceptionHelper.mapExceptionToResponse(e)));
       }
     });
     
