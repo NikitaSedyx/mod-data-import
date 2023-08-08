@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -17,15 +18,22 @@ import org.apache.http.HttpStatus;
 
 import org.folio.rest.jaxrs.model.AssembleFileDto;
 import org.folio.rest.jaxrs.model.FileUploadInfo;
+import org.folio.rest.jaxrs.model.JobExecution;
+import org.folio.rest.jaxrs.model.ProcessSplitFilesRqDto;
+import org.folio.rest.jaxrs.model.UploadDefinition;
 import org.folio.s3.client.S3ClientFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.matching.RegexPattern;
+import com.github.tomakehurst.wiremock.matching.UrlPathPattern;
+
 import io.restassured.RestAssured;
 import io.restassured.mapper.ObjectMapperType;
 import io.restassured.path.json.JsonPath;
-
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -36,6 +44,7 @@ public class DataImportAssembleFileTest extends AbstractRestTest {
   private static final String ASSEMBLE_PATH = "/data-import/assembleStorageFile";
   private static final String UPLOAD_URL_PATH = "/data-import/uploadUrl";
   private static final String UPLOAD_URL_CONTINUE_PATH = "/data-import/uploadUrl/subsequent";
+  private static final String START_SPLIT_PATH = "/data-import/uploadDefinitions/processSplitFiles";
   @Test
   public void shouldAssembleFile(TestContext context) {
     //start upload
@@ -128,6 +137,36 @@ public class DataImportAssembleFileTest extends AbstractRestTest {
       .then()
       .log().all()
       .statusCode(HttpStatus.SC_BAD_REQUEST);
+  }
+  @Test
+  public void shouldStartSplitProcess(TestContext context) {
+    
+    UploadDefinition uploadDef = new UploadDefinition().withId(UUID.randomUUID().toString());
+    JobExecution jobExecution = new JobExecution()
+        .withId("5105b55a-b9a3-4f76-9402-a5243ea63c97")
+        .withParentJobId("5105b55a-b9a3-4f76-9402-a5243ea63c95")
+        .withSubordinationType(JobExecution.SubordinationType.PARENT_MULTIPLE)
+        .withStatus(JobExecution.Status.NEW)
+        .withUiStatus(JobExecution.UiStatus.INITIALIZATION)
+        .withUserId(UUID.randomUUID().toString());
+
+      WireMock.stubFor(WireMock.post(new UrlPathPattern(new RegexPattern("/change-manager/jobExecutions"), true))  
+        .willReturn(WireMock.ok().withBody(JsonObject.mapFrom(jobExecution).encode())));
+      WireMock.stubFor(WireMock.get(new UrlPathPattern(new RegexPattern("/data-import/uploaddefinition/" + uploadDef.getId()), true))  
+          .willReturn(WireMock.ok().withBody(JsonObject.mapFrom(uploadDef).encode())));
+    
+      ProcessSplitFilesRqDto newDto = new ProcessSplitFilesRqDto().withUploadDefinition(uploadDef);
+      RestAssured.given()
+        .spec(spec)
+        .when()
+        .body(newDto)
+        .post(START_SPLIT_PATH )
+        .then()
+        .log().all()
+        .statusCode(HttpStatus.SC_NO_CONTENT);
+    
+    
+
   }
   private ArrayList<String> putFakeFile(TestContext context, String url1, int size) {
     ArrayList<String> tags = new ArrayList<String>();
