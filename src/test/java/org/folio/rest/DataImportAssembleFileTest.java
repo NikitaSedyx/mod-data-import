@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -17,8 +18,10 @@ import javax.net.ssl.HttpsURLConnection;
 import org.apache.http.HttpStatus;
 
 import org.folio.rest.jaxrs.model.AssembleFileDto;
+import org.folio.rest.jaxrs.model.FileDefinition;
 import org.folio.rest.jaxrs.model.FileUploadInfo;
 import org.folio.rest.jaxrs.model.JobExecution;
+import org.folio.rest.jaxrs.model.JobProfileInfo;
 import org.folio.rest.jaxrs.model.ProcessSplitFilesRqDto;
 import org.folio.rest.jaxrs.model.UploadDefinition;
 import org.folio.s3.client.S3ClientFactory;
@@ -44,7 +47,8 @@ public class DataImportAssembleFileTest extends AbstractRestTest {
   private static final String ASSEMBLE_PATH = "/data-import/assembleStorageFile";
   private static final String UPLOAD_URL_PATH = "/data-import/uploadUrl";
   private static final String UPLOAD_URL_CONTINUE_PATH = "/data-import/uploadUrl/subsequent";
-  private static final String START_SPLIT_PATH = "/data-import/uploadDefinitions/processSplitFiles";
+  private static final String START_SPLIT_PATH = "/data-import/uploadDefinitions/";
+  private static final String DEFINITION_PATH = "/data-import/uploadDefinitions";
   @Test
   public void shouldAssembleFile(TestContext context) {
     //start upload
@@ -140,8 +144,25 @@ public class DataImportAssembleFileTest extends AbstractRestTest {
   }
   @Test
   public void shouldStartSplitProcess(TestContext context) {
+    FileDefinition file1 = new FileDefinition()
+        .withUiKey("CornellFOLIOExemplars_Bibs(1).mrc.md1547160916680")
+        .withName("CornellFOLIOExemplars_Bibs(1).mrc")
+        .withSize(209);
+    UploadDefinition uploadDef = new UploadDefinition()
+        .withFileDefinitions(Collections.singletonList(file1));
     
-    UploadDefinition uploadDef = new UploadDefinition().withId(UUID.randomUUID().toString());
+    String uploadDefId = RestAssured.given()
+        .spec(spec)
+        .body(uploadDef)
+        .when()
+        .post(DEFINITION_PATH)
+        .then()
+        .statusCode(HttpStatus.SC_CREATED)
+        .log().all()
+        .extract().body().jsonPath().get("id");
+    uploadDef.setId(uploadDefId);
+    
+    JobProfileInfo jobProfile = new JobProfileInfo().withId(UUID.randomUUID().toString());
     JobExecution jobExecution = new JobExecution()
         .withId("5105b55a-b9a3-4f76-9402-a5243ea63c97")
         .withParentJobId("5105b55a-b9a3-4f76-9402-a5243ea63c95")
@@ -155,12 +176,13 @@ public class DataImportAssembleFileTest extends AbstractRestTest {
       WireMock.stubFor(WireMock.get(new UrlPathPattern(new RegexPattern("/data-import/uploaddefinition/" + uploadDef.getId()), true))  
           .willReturn(WireMock.ok().withBody(JsonObject.mapFrom(uploadDef).encode())));
     
-      ProcessSplitFilesRqDto newDto = new ProcessSplitFilesRqDto().withUploadDefinition(uploadDef);
+      
+      ProcessSplitFilesRqDto newDto = new ProcessSplitFilesRqDto().withUploadDefinition(uploadDef).withJobProfileInfo(jobProfile);
       RestAssured.given()
         .spec(spec)
         .when()
         .body(newDto)
-        .post(START_SPLIT_PATH )
+        .post(START_SPLIT_PATH  + uploadDef.getId() + "/processSplitFiles" )
         .then()
         .log().all()
         .statusCode(HttpStatus.SC_NO_CONTENT);
