@@ -190,6 +190,45 @@ public class DataImportAssembleFileTest extends AbstractRestTest {
     
 
   }
+  @Test
+  public void shouldFailtoStartSplitProcess(TestContext context) {
+    FileDefinition file1 = new FileDefinition()
+        .withUiKey("CornellFOLIOExemplars_Bibs(1).mrc.md1547160916680")
+        .withName("CornellFOLIOExemplars_Bibs(1).mrc")
+        .withSize(209);
+    UploadDefinition uploadDef = new UploadDefinition()
+        .withFileDefinitions(Collections.singletonList(file1))
+        .withId(UUID.randomUUID().toString());
+    
+
+    
+    JobProfileInfo jobProfile = new JobProfileInfo().withId(UUID.randomUUID().toString());
+    JobExecution jobExecution = new JobExecution()
+        .withId("5105b55a-b9a3-4f76-9402-a5243ea63c97")
+        .withParentJobId("5105b55a-b9a3-4f76-9402-a5243ea63c95")
+        .withSubordinationType(JobExecution.SubordinationType.PARENT_MULTIPLE)
+        .withStatus(JobExecution.Status.NEW)
+        .withUiStatus(JobExecution.UiStatus.INITIALIZATION)
+        .withUserId(UUID.randomUUID().toString());
+
+      WireMock.stubFor(WireMock.post(new UrlPathPattern(new RegexPattern("/change-manager/jobExecutions"), true))  
+        .willReturn(WireMock.ok().withBody(JsonObject.mapFrom(jobExecution).encode())));
+
+    
+      
+      ProcessSplitFilesRqDto newDto = new ProcessSplitFilesRqDto().withUploadDefinition(uploadDef).withJobProfileInfo(jobProfile);
+      RestAssured.given()
+        .spec(spec)
+        .when()
+        .body(newDto)
+        .post(START_SPLIT_PATH  + uploadDef.getId() + "/processSplitFiles" )
+        .then()
+        .log().all()
+        .statusCode(HttpStatus.SC_BAD_REQUEST);
+    
+    
+
+  }
   private ArrayList<String> putFakeFile(TestContext context, String url1, int size) {
     ArrayList<String> tags = new ArrayList<String>();
     try {
