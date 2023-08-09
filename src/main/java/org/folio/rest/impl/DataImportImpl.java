@@ -563,7 +563,10 @@ public class DataImportImpl implements DataImport {
           })
           .map(throwaway -> PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse.respond204())
           .map(Response.class::cast)
-          .otherwise(ExceptionHelper::mapExceptionToResponse)
+          .otherwise((result) -> {
+            
+           return PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse.respond400WithTextPlain(result); }
+          )
           .onComplete(asyncResultHandler);
 
       } catch (Exception e) {
