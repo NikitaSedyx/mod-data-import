@@ -36,6 +36,7 @@ import org.folio.service.fileextension.FileExtensionService;
 import org.folio.service.processing.FileProcessor;
 import org.folio.service.s3storage.MinioStorageService;
 import org.folio.service.upload.UploadDefinitionService;
+import org.folio.service.upload.UploadDefinitionServiceImpl;
 import org.folio.spring.SpringContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.vertx.core.Future.succeededFuture;
 import static org.folio.rest.RestVerticle.OKAPI_USERID_HEADER;
 import static org.folio.rest.RestVerticle.STREAM_ABORT;
 import static org.folio.rest.jaxrs.model.FileDefinition.Status.ERROR;
@@ -530,22 +532,22 @@ public class DataImportImpl implements DataImport {
     //look up upload definition
     vertxContext.runOnContext(c -> {
       try {
-
+        OkapiConnectionParams params = new OkapiConnectionParams(okapiHeaders, vertxContext.owner());
         uploadDefinitionService.getUploadDefinitionById(uploadDefinitionId, tenantId)
           .compose((uploadDefinition) -> {
-            Promise<List<FileDefinition>> fileDefPromise = Promise.promise();
+            Promise<List<FileDefinition>> uploadDefPromise = Promise.promise();
             if (uploadDefinition.isPresent()) {
-              fileDefPromise.complete(uploadDefinition.get()
+              uploadDefPromise.complete(uploadDefinition.get()
                 .getFileDefinitions());
 
             } else {
-              fileDefPromise.fail("UploadDefinition does not exist");
+              uploadDefPromise.fail("UploadDefinition does not exist");
             }
-            return fileDefPromise.future();
+            return uploadDefPromise.future();
           })
           .compose(fileDefs -> {
             // create job execution
-            OkapiConnectionParams params = new OkapiConnectionParams(okapiHeaders, vertxContext.owner());
+            
             ChangeManagerClient client = new ChangeManagerClient(params.getOkapiUrl(), params.getTenantId(), params.getToken());
             InitJobExecutionsRqDto dto = new InitJobExecutionsRqDto();
             List<org.folio.rest.jaxrs.model.File> files = new ArrayList<org.folio.rest.jaxrs.model.File>();
@@ -560,6 +562,12 @@ public class DataImportImpl implements DataImport {
             dto.setSourceType(SourceType.FILES);
 
             return client.postChangeManagerJobExecutions(dto);
+          }).compose(result -> {
+            UploadDefinitionService uploadDefinitionService = new UploadDefinitionServiceImpl(vertxContext.owner());
+            return uploadDefinitionService.updateBlocking(
+                uploadDefinitionId,
+                definition -> succeededFuture(definition.withStatus(UploadDefinition.Status.COMPLETED)),
+                params.getTenantId());
           })
           .map(throwaway -> PostDataImportUploadDefinitionsProcessSplitFilesByUploadDefinitionIdResponse.respond204())
           .map(Response.class::cast)
