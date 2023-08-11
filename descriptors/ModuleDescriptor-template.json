@@ -249,6 +249,19 @@
             "orders.item.unopen"
           ]
         },
+       {
+          "methods": [
+            "POST"
+          ],
+          "pathPattern": "/data-import/uploadDefinitions/{uploadDefinitionId}/processSplitFiles",
+          "permissionsRequired": [
+            "data-import.uploaddefinitions.splitfiles.post"
+          ],
+          "modulePermissions": [
+            "change-manager.jobexecutions.get",
+            "change-manager.jobexecutions.put"
+          ]
+        }
         {
           "methods": ["GET"],
           "pathPattern": "/data-import/fileExtensions",
@@ -328,6 +341,11 @@
       "permissionName": "data-import.splitconfig.get",
       "displayName": "Get the status of file splitting configuration",
       "description": "Get the status of file splitting configuration"
+    },
+    {
+      "permissionName": "data-import.uploaddefinitions.splitfiles.post",
+      "displayName": "Post to the api that allows processing split files",
+      "description": "Post to the api that allows processing split files"
     },
     {
       "permissionName": "data-import.uploaddefinitions.post",
