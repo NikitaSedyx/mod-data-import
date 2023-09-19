@@ -1,7 +1,9 @@
 package org.folio.service.processing.split;
 
-import static org.folio.service.processing.reader.MarcJsonReader.JSON_EXTENSION;
-import static org.folio.service.processing.reader.MarcXmlReader.XML_EXTENSION;
+import lombok.experimental.UtilityClass;
+import org.apache.commons.io.FilenameUtils;
+import org.folio.rest.jaxrs.model.JobProfileInfo;
+import org.folio.service.processing.ParallelFileChunkingProcessor;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,10 +13,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
-import lombok.experimental.UtilityClass;
-import org.apache.commons.io.FilenameUtils;
-import org.folio.rest.jaxrs.model.JobProfileInfo;
-import org.folio.service.processing.ParallelFileChunkingProcessor;
+
+import static org.folio.service.processing.reader.MarcJsonReader.JSON_EXTENSION;
+import static org.folio.service.processing.reader.MarcXmlReader.XML_EXTENSION;
 
 @UtilityClass
 public class FileSplitUtilities {
@@ -61,13 +62,14 @@ public class FileSplitUtilities {
       )
       .toFile();
 
-    try (
-      InputStream autoCloseMe = inStream;
-      OutputStream fileOutputStream = new FileOutputStream(tempFile)
-    ) {
-      inStream.transferTo(fileOutputStream);
-      fileOutputStream.flush();
-
+    try {
+      try (
+        InputStream autoCloseMe = inStream;
+        OutputStream fileOutputStream = new FileOutputStream(tempFile)
+      ) {
+        inStream.transferTo(fileOutputStream);
+        fileOutputStream.flush();
+      }
       return ParallelFileChunkingProcessor.countTotalRecordsInFile(
         tempFile,
         profile
