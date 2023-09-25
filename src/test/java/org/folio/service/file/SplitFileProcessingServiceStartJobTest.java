@@ -41,8 +41,6 @@ import org.folio.rest.jaxrs.model.InitJobExecutionsRqDto;
 import org.folio.rest.jaxrs.model.InitJobExecutionsRsDto;
 import org.folio.rest.jaxrs.model.JobExecution;
 import org.folio.rest.jaxrs.model.JobExecutionDto;
-import org.folio.rest.jaxrs.model.JobProfileInfo;
-import org.folio.rest.jaxrs.model.JobProfileInfo.DataType;
 import org.folio.rest.jaxrs.model.ProcessFilesRqDto;
 import org.folio.rest.jaxrs.model.StatusDto;
 import org.folio.rest.jaxrs.model.UploadDefinition;
@@ -58,6 +56,9 @@ public class SplitFileProcessingServiceStartJobTest
   extends SplitFileProcessingServiceAbstractTest {
 
   private static final Resource TEST_FILE = new ClassPathResource("10.mrc");
+  private static final Resource TEST_EDIFACT_FILE = new ClassPathResource(
+    "edifact/CornAuxAm.1605541205.edi"
+  );
 
   @Before
   public void mockDao() {
@@ -195,7 +196,7 @@ public class SplitFileProcessingServiceStartJobTest
   @Test
   public void testSplitNonMarcFile(TestContext context) throws IOException {
     when(minioStorageService.readFile("test-key"))
-      .thenReturn(Future.succeededFuture(TEST_FILE.getInputStream()));
+      .thenReturn(Future.succeededFuture(TEST_EDIFACT_FILE.getInputStream()));
 
     when(fileSplitService.splitFileFromS3(any(), any()))
       .thenReturn(
@@ -208,7 +209,7 @@ public class SplitFileProcessingServiceStartJobTest
         context.asyncAssertSuccess(result -> {
           assertThat(result.getKey(), is("test-key"));
           assertThat(result.getSplitKeys(), contains("test-key"));
-          assertThat(result.getTotalRecords(), is(10));
+          assertThat(result.getTotalRecords(), is(1));
         })
       );
   }
