@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.time.TimeZones;
@@ -48,7 +47,7 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
   private static final String DELETE_BY_ID_SQL =
     "DELETE FROM %s.%s WHERE id = $1";
   private static final String DELETE_BY_JOB_ID_SQL =
-      "DELETE FROM %s.%s WHERE job_execution_id = $1";
+    "DELETE FROM %s.%s WHERE job_execution_id = $1";
   private static final String LOCK_ACCESS_EXCLUSIVE_SQL =
     "LOCK TABLE %s.%s IN ACCESS EXCLUSIVE MODE";
 
@@ -85,7 +84,9 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
       );
       promise.fail(e);
     }
-    return promise.future().map(this::mapResultSetToQueueItemList);
+    return promise
+      .future()
+      .map(DataImportQueueItemDaoImpl::mapResultSetToQueueItemList);
   }
 
   @Override
@@ -107,7 +108,9 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
       );
       promise.fail(e);
     }
-    return promise.future().map(this::mapResultSetToQueueItemList);
+    return promise
+      .future()
+      .map(DataImportQueueItemDaoImpl::mapResultSetToQueueItemList);
   }
 
   @Override
@@ -129,7 +132,9 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
       );
       promise.fail(e);
     }
-    return promise.future().map(this::mapResultSetToQueueItemList);
+    return promise
+      .future()
+      .map(DataImportQueueItemDaoImpl::mapResultSetToQueueItemList);
   }
 
   @Override
@@ -196,11 +201,15 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
     }
     return promise
       .future()
-      .map(resultSet ->
-        resultSet.rowCount() == 0
-          ? Optional.empty()
-          : Optional.of(mapRowJsonToQueueItem(resultSet.iterator().next()))
-      );
+      .map((RowSet<Row> resultSet) -> {
+        if (resultSet.rowCount() == 0) {
+          return Optional.empty();
+        } else {
+          return Optional.of(
+            mapRowJsonToQueueItem(resultSet.iterator().next())
+          );
+        }
+      });
   }
 
   @Override
@@ -275,19 +284,22 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
     }
     return promise
       .future()
-      .compose(updateResult ->
-        updateResult.rowCount() == 1
-          ? Future.succeededFuture(dataImportQueueItem)
-          : Future.failedFuture(
+      .compose((RowSet<Row> updateResult) -> {
+        if (updateResult.rowCount() == 1) {
+          return Future.succeededFuture(dataImportQueueItem);
+        } else {
+          return Future.failedFuture(
             new NotFoundException(
               format(
                 "DataImportQueueItem with id %s was not updated",
                 dataImportQueueItem.getId()
               )
             )
-          )
-      );
+          );
+        }
+      });
   }
+
   @Override
   public Future<Void> deleteDataImportQueueItemByJobExecutionId(String id) {
     String query = format(
@@ -298,7 +310,7 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
     return pgClientFactory
       .getInstance()
       .execute(query, Tuple.of(id))
-      .flatMap(result -> {
+      .flatMap((RowSet<Row> result) -> {
         if (result.rowCount() == 1) {
           return Future.succeededFuture();
         }
@@ -311,6 +323,7 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
         return Future.failedFuture(notFoundException);
       });
   }
+
   @Override
   public Future<Void> deleteDataImportQueueItem(String id) {
     String query = format(
@@ -321,21 +334,18 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
     return pgClientFactory
       .getInstance()
       .execute(query, Tuple.of(id))
-      .flatMap(result -> {
+      .flatMap((RowSet<Row> result) -> {
         if (result.rowCount() == 1) {
           return Future.succeededFuture();
         }
-        String message = format(
-          "Error deleting queue item with id '%s'",
-          id
-        );
+        String message = format("Error deleting queue item with id '%s'", id);
         NotFoundException notFoundException = new NotFoundException(message);
         LOGGER.error(message, notFoundException);
         return Future.failedFuture(notFoundException);
       });
   }
 
-  private DataImportQueueItem mapRowJsonToQueueItem(Row rowAsJson) {
+  private static DataImportQueueItem mapRowJsonToQueueItem(Row rowAsJson) {
     DataImportQueueItem queueItem = new DataImportQueueItem();
     queueItem.setId(rowAsJson.get(UUID.class, "id").toString());
     queueItem.setJobExecutionId(
@@ -357,7 +367,7 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
     return queueItem;
   }
 
-  private DataImportQueueItemCollection mapResultSetToQueueItemList(
+  private static DataImportQueueItemCollection mapResultSetToQueueItemList(
     RowSet<Row> resultSet
   ) {
     DataImportQueueItemCollection result = new DataImportQueueItemCollection();
@@ -365,8 +375,8 @@ public class DataImportQueueItemDaoImpl implements DataImportQueueItemDao {
       Stream
         .generate(resultSet.iterator()::next)
         .limit(resultSet.size())
-        .map(this::mapRowJsonToQueueItem)
-        .collect(Collectors.toList())
+        .map(DataImportQueueItemDaoImpl::mapRowJsonToQueueItem)
+        .toList()
     );
     return result;
   }
