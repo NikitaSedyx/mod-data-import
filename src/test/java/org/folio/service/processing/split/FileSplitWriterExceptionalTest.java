@@ -1,4 +1,4 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Promise;
@@ -12,9 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.folio.service.processing.split.FileSplitUtilities;
-import org.folio.service.processing.split.FileSplitWriter;
-import org.folio.service.processing.split.FileSplitWriterOptions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

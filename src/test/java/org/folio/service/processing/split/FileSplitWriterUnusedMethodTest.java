@@ -1,4 +1,4 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -8,8 +8,6 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.io.IOException;
-import org.folio.service.processing.split.FileSplitWriter;
-import org.folio.service.processing.split.FileSplitWriterOptions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

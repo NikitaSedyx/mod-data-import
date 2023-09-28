@@ -1,4 +1,4 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.is;
 
 import java.io.File;
 import java.io.IOException;
-import org.folio.service.processing.split.FileSplitUtilities;
 import org.junit.Test;
 
 public class FileSplitUtilitiesTempDirTest {

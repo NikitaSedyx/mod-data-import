@@ -1,16 +1,10 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -21,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.folio.service.processing.split.AsyncInputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -317,53 +310,6 @@ public class AsyncInputStreamTest {
 
     stream.read();
   }
-
-  // @Test
-  // public void testBadContextNoHandler(TestContext context) {
-  //   Async async = context.async();
-
-  //   // new Vertx.vertx() is not owner of the context used
-  //   AsyncInputStream stream = new AsyncInputStream(
-  //     Vertx.vertx(),
-  //     vertx.getOrCreateContext(),
-  //     new ByteArrayInputStream(emptyBuff)
-  //   );
-
-  //   stream.endHandler(v ->
-  //     context.fail("Non-exception handlers should not work in invalid contexts")
-  //   );
-
-  //   stream.handler(buff ->
-  //     context.fail("Non-exception handlers should not work in invalid contexts")
-  //   );
-
-  //   // make sure nothing happens, then complete
-  //   vertx.setTimer(100, v -> async.complete());
-  // }
-
-  // @Test
-  // @SuppressWarnings("java:S2699")
-  // public void testNoEndHandler(TestContext context) {
-  //   Async async = context.async();
-  //   AsyncInputStream stream = new AsyncInputStream(
-  //     vertx.getOrCreateContext(),
-  //     new ByteArrayInputStream(smallBuff)
-  //   );
-
-  //   List<byte[]> receivedData = new ArrayList<>();
-
-  //   stream.handler(buff ->
-  //     context.verify(v -> {
-  //       receivedData.add(buff.getBytes());
-
-  //       assertThat(receivedData, hasSize(1));
-  //       assertThat(receivedData, hasSize(1));
-  //       assertThat(receivedData.get(0), is(smallBuff));
-  //       assertThat(receivedData.get(0), is(smallBuff));
-  //       async.complete();
-  //     })
-  //   );
-  // }
 
   @Test
   public void testCloseFailure(TestContext context) {

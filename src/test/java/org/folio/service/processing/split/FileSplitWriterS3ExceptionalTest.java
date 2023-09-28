@@ -1,4 +1,4 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -12,8 +12,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.io.IOException;
 import java.io.InputStream;
-import org.folio.service.processing.split.FileSplitWriter;
-import org.folio.service.processing.split.FileSplitWriterOptions;
 import org.folio.service.s3storage.MinioStorageService;
 import org.junit.Before;
 import org.junit.Rule;

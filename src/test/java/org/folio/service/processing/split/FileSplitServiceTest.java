@@ -1,4 +1,4 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.folio.service.processing.split.FileSplitService;
-import org.folio.service.processing.split.FileSplitUtilities;
 import org.folio.service.s3storage.MinioStorageService;
 import org.junit.Before;
 import org.junit.Rule;

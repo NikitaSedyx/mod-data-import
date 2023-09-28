@@ -1,11 +1,10 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import java.util.Arrays;
 import java.util.Collection;
-import org.folio.service.processing.split.FileSplitUtilities;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

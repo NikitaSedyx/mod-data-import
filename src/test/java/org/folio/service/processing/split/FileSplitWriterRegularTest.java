@@ -1,4 +1,4 @@
-package org.folio.service.split;
+package org.folio.service.processing.split;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -24,9 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.folio.rest.jaxrs.model.JobProfileInfo;
-import org.folio.service.processing.split.FileSplitUtilities;
-import org.folio.service.processing.split.FileSplitWriter;
-import org.folio.service.processing.split.FileSplitWriterOptions;
 import org.folio.service.s3storage.MinioStorageService;
 import org.junit.Before;
 import org.junit.Rule;
